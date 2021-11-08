@@ -1,72 +1,50 @@
-from selenium.webdriver import Firefox, FirefoxProfile
+from selenium.webdriver import Firefox
 from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.common.by import By
 from datetime import datetime
-# import os
-import random, psutil, shutil, os, time
+import psutil, shutil, os, time
 
+def save_profile():
+	for pid in psutil.pids():
+		try:
+			cmdline = open("/proc/"+str(pid)+"/cmdline", "r").read()
+			if distinguishkey in cmdline:
+				profile = cmdline.split('-profile')[1].split(' ')[0].replace('\x00', '')
+				psutil.Process(pid).kill() # kill firefox (nicely) and unlock profile lock
+				if os.path.isdir(profile_path):
+					shutil.rmtree(profile_path, ignore_errors=True)
+				shutil.copytree(profile, '/profile', symlinks=True, dirs_exist_ok=True) # copy the new profile to profile_path, don't resolve "lock" symlink
+				break
+		except:
+			pass
 
-profile_path = '/profile'
+distinguishkey = "profileworkaround"
 
-profile = FirefoxProfile(profile_path)
 options = Options()
-options.profile = profile
-
-distinguishkey = "-persistentprofileworkaround"+str(random.randint(111111,999999))
+options.set_preference('profile', '/profile')
 options.add_argument(distinguishkey)
-
 options.add_argument('--headless')
-# options.add_argument('--no-sandbox')
-# options.add_argument('--disable-dev-shm-usage')
 driver = Firefox(options=options)
 
-driver.get("https://web.whatsapp.com")
-
-time.sleep(20)
-
-#! Detect qrcode and ask for scan
-driver.save_screenshot(f"/app/{datetime.now().strftime('%Y-%m-%d_%H-%M')}_screen.png")
-
-# time.sleep(120)
-
-for pid in psutil.pids():
-	try:
-		cmdline = open("/proc/"+str(pid)+"/cmdline", "r").read()
-		if distinguishkey in cmdline:
-		  profile = cmdline.split('-profile')[1].split(' ')[0].replace('\x00', '')
-		  break
-	except:
-		pass
-
-psutil.Process(pid).kill() # kill firefox (nicely) and unlock profile lock
-if os.path.isdir(profile_path):
-	shutil.rmtree(profile_path, ignore_errors=True)
-shutil.copytree(profile, profile_path, symlinks=True, dirs_exist_ok=True) # copy the new profile to profile_path, don't resolve "lock" symlink
+# driver.get("https://web.whatsapp.com")
+driver.get("https://rcaldas.com")
 
 try:
-    driver.quit() # will throw an error because we killed firefox
-except Exception as e:
-    print(e)
-    pass
+	try:
+		WebDriverWait(driver, 3).until(EC.presence_of_element_located((By.XPATH, "//canvas[@aria-label='Scan me!']")))
+		print('ask for scan')
+		save_profile()
+	except:
+		login = WebDriverWait(driver, 3).until(EC.presence_of_element_located((By.ID, 'user')))
 
-# cleanup
-if os.path.isdir(profile):
-	shutil.rmtree(profile)
-if os.path.isdir(driver.profile.tempfolder):
-	shutil.rmtree(driver.profile.tempfolder)
-
-
-
-
-# profiletmp = driver.firefox_profile.path
-
-# if os.system("cp -R " + profiletmp + "/* /profile/" ):
-#     print("files should be copied :/")
-
-
-# driver.quit()
-
-
-# options.headless = True
+		login.send_keys('rcaldas')
+		driver.find_element(By.ID, 'pwd').send_keys('jsaklfjlksj')
+		# driver.find_element(By.ID, 'login').click()
+		driver.save_screenshot(f"/app/{datetime.now().strftime('%Y-%m-%d_%H-%M')}_screen.png")
+finally:
+    driver.quit()
 
 
 # name = "Whatsapp Bot"
