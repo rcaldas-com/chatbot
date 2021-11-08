@@ -28,8 +28,8 @@ options.add_argument(distinguishkey)
 options.add_argument('--headless')
 driver = Firefox(options=options)
 
-# driver.get("https://web.whatsapp.com")
-driver.get("https://rcaldas.com")
+driver.get("https://web.whatsapp.com")
+# driver.get("https://rcaldas.com")
 
 try:
 	try:

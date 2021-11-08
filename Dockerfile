@@ -6,15 +6,12 @@ COPY    requirements.txt        /app/
 RUN     pip install --no-cache-dir --upgrade pip && \
         pip install --no-cache-dir -r requirements.txt &&\
         apt update && apt install -y --no-install-recommends firefox-esr && apt clean
-COPY    --chmod=755     geckodriver             /usr/bin/geckodriver
+
+RUN     curl -s https://api.github.com/repos/mozilla/geckodriver/releases/latest | \
+                grep "browser_download_url.*linux64.tar.gz\"" | cut -d '"' -f 4 | \
+                wget -qi - -O /tmp/driver.tar.gz &&\
+        tar -xzpf /tmp/driver.tar.gz -C /usr/bin && rm /tmp/driver.tar.gz
 
 ENTRYPOINT  python driver.py
 COPY    app /app
-
-
-# RUN     curl -Ls "https://download.mozilla.org/?product=firefox-latest-ssl&os=linux64&lang=pt-BR" -o /tmp/firefox.tar.bz2 &&\
-#         tar -xjf /tmp/firefox.tar.bz2 -C /usr/share/ &&\
-#         rm /tmp/firefox.tar.bz2 &&\
-#         ln -fs /usr/share/firefox/firefox-bin /usr/local/bin/firefox
-
 
